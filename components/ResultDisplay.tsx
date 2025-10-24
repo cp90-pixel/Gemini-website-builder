@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { ViewMode } from '../types';
 
 interface ResultDisplayProps {
@@ -36,6 +36,80 @@ const InitialState: React.FC = () => (
 
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ htmlContent, isLoading, error, viewMode, setViewMode }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) {
+      return;
+    }
+
+    let cleanup: (() => void) | undefined;
+
+    const ensureLinksOpenExternally = () => {
+      cleanup?.();
+
+      try {
+        const iframeDocument = iframe.contentDocument;
+        if (!iframeDocument) {
+          cleanup = undefined;
+          return;
+        }
+
+        const updateAnchorAttributes = (anchor: HTMLAnchorElement) => {
+          anchor.setAttribute('target', '_blank');
+          const existingRel = anchor.getAttribute('rel');
+          const relValues = new Set((existingRel ? existingRel.split(/\s+/) : []).filter(Boolean));
+          relValues.add('noopener');
+          relValues.add('noreferrer');
+          anchor.setAttribute('rel', Array.from(relValues).join(' '));
+        };
+
+        iframeDocument.querySelectorAll('a[href]').forEach(anchor => {
+          updateAnchorAttributes(anchor as HTMLAnchorElement);
+        });
+
+        const handleLinkClick = (event: MouseEvent) => {
+          const target = event.target as Element | null;
+          const anchor = target?.closest('a[href]');
+          if (!anchor) {
+            return;
+          }
+
+          const href = anchor.getAttribute('href');
+          if (!href || href.trim() === '' || href.startsWith('#') || href.toLowerCase().startsWith('javascript:')) {
+            return;
+          }
+
+          updateAnchorAttributes(anchor as HTMLAnchorElement);
+
+          event.preventDefault();
+
+          try {
+            const resolvedUrl = new URL(href, iframeDocument.baseURI || window.location.href);
+            window.open(resolvedUrl.toString(), '_blank', 'noopener');
+          } catch {
+            window.open(href, '_blank', 'noopener');
+          }
+        };
+
+        iframeDocument.addEventListener('click', handleLinkClick);
+        cleanup = () => {
+          iframeDocument.removeEventListener('click', handleLinkClick);
+        };
+      } catch {
+        cleanup = undefined;
+      }
+    };
+
+    ensureLinksOpenExternally();
+    iframe.addEventListener('load', ensureLinksOpenExternally);
+
+    return () => {
+      iframe.removeEventListener('load', ensureLinksOpenExternally);
+      cleanup?.();
+    };
+  }, [htmlContent]);
 
   const renderContent = () => {
     if (isLoading) {
@@ -56,10 +130,11 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ htmlContent, isLoading, e
     if (viewMode === ViewMode.Preview) {
       return (
         <iframe
+          ref={iframeRef}
           srcDoc={htmlContent}
           title="Website Preview"
           className="w-full h-full border-0 bg-white"
-          sandbox="allow-scripts allow-same-origin"
+          sandbox="allow-scripts allow-same-origin allow-popups"
         />
       );
     }
