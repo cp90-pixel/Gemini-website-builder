@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Website Builder",
+  "description": "Generate single-page websites using natural language prompts powered by Gemini 2.5 Pro. Describe your desired website, and watch as AI crafts the HTML and Tailwind CSS code for you.",
+  "requestFramePermissions": []
+}
