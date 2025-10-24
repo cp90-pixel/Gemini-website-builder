@@ -95,7 +95,8 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ targetElement, onComp
             throw new Error("Iframe content is not accessible.");
         }
         
-        const captureTarget = targetElement.contentDocument.body;
+        // Use documentElement for better accuracy, especially with scrolling.
+        const captureTarget = targetElement.contentDocument.documentElement;
 
         const screenshotCanvas = await html2canvas(captureTarget, {
             allowTaint: true,
@@ -103,8 +104,10 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ targetElement, onComp
             logging: false,
             width: targetElement.clientWidth,
             height: targetElement.clientHeight,
-            scrollX: targetElement.contentWindow.scrollX,
-            scrollY: targetElement.contentWindow.scrollY,
+            // Pass the negative scroll position to capture the correct viewport.
+            // This is a common workaround for html2canvas to handle scroll offsets.
+            scrollX: -targetElement.contentWindow.scrollX,
+            scrollY: -targetElement.contentWindow.scrollY,
         });
 
         const finalCanvas = document.createElement('canvas');
