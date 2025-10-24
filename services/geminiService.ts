@@ -26,12 +26,12 @@ Your task is to generate and iteratively refine a complete, single HTML file bas
 `;
 
 
-export const startChatSession = (): Chat => {
-  if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set. Please ensure it's configured.");
+export const startChatSession = (apiKey: string): Chat => {
+  if (!apiKey) {
+    throw new Error("Gemini API key not provided.");
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey });
   
   return ai.chats.create({
     model: 'gemini-2.5-pro',
