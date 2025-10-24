@@ -7,8 +7,6 @@ interface PromptControlsProps {
   setMessage: (msg: string) => void;
   onSendMessage: () => void;
   isLoading: boolean;
-  annotationImage: string | null;
-  clearAnnotation: () => void;
 }
 
 const conversationStarters = [
@@ -24,7 +22,7 @@ const LoadingIcon: React.FC = () => (
     </svg>
 );
 
-const PromptControls: React.FC<PromptControlsProps> = ({ history, message, setMessage, onSendMessage, isLoading, annotationImage, clearAnnotation }) => {
+const PromptControls: React.FC<PromptControlsProps> = ({ history, message, setMessage, onSendMessage, isLoading }) => {
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -48,15 +46,9 @@ const PromptControls: React.FC<PromptControlsProps> = ({ history, message, setMe
         {history.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div className={`max-w-lg p-3 rounded-lg ${msg.role === 'user' ? 'bg-cyan-600 text-white' : 'bg-slate-700 text-slate-200'}`}>
-              {msg.parts.map((part, partIndex) => {
-                if (part.inlineData) {
-                  return <img key={partIndex} src={`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`} className="rounded-md max-w-full mb-2 border-2 border-slate-500/50" alt="Annotation context" />;
-                }
-                if (part.text) {
-                  return <p key={partIndex} className="text-sm whitespace-pre-wrap break-words">{part.text}</p>;
-                }
-                return null;
-              })}
+              {msg.parts.map((part, partIndex) => (
+                <p key={partIndex} className="text-sm whitespace-pre-wrap break-words">{part.text}</p>
+              ))}
             </div>
           </div>
         ))}
@@ -72,7 +64,7 @@ const PromptControls: React.FC<PromptControlsProps> = ({ history, message, setMe
       </div>
       
       <div className="p-4 border-t border-slate-700 bg-slate-800/50">
-        {history.length === 0 && !isLoading && !annotationImage && (
+        {history.length === 0 && !isLoading && (
             <div className="mb-3">
                 <h3 className="text-sm font-medium text-slate-400 mb-2">Start a conversation:</h3>
                 <div className="grid grid-cols-1 gap-2">
@@ -89,26 +81,12 @@ const PromptControls: React.FC<PromptControlsProps> = ({ history, message, setMe
                 </div>
             </div>
         )}
-        {annotationImage && (
-            <div className="mb-2 relative w-32 h-20 border border-slate-600 rounded-md overflow-hidden">
-                <img src={annotationImage} alt="Annotation thumbnail" className="object-cover w-full h-full" />
-                <button 
-                    onClick={clearAnnotation}
-                    className="absolute top-1 right-1 bg-slate-900/50 text-white rounded-full p-0.5 hover:bg-slate-900/80 transition-colors"
-                    aria-label="Clear annotation"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                </button>
-            </div>
-        )}
         <div className="relative">
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={annotationImage ? "Describe the change for the circled area..." : "Change the background to dark blue..."}
+            placeholder="Change the background to dark blue..."
             className="w-full p-3 pr-14 bg-slate-900 border border-slate-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none transition-shadow resize-none text-slate-200"
             rows={2}
             disabled={isLoading}

@@ -17,8 +17,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Preview);
-  const [isAnnotating, setIsAnnotating] = useState<boolean>(false);
-  const [annotationImage, setAnnotationImage] = useState<string | null>(null);
 
   useEffect(() => {
     const storedKey = localStorage.getItem('gemini_api_key');
@@ -51,27 +49,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAnnotationComplete = (imageDataUrl: string) => {
-    setAnnotationImage(imageDataUrl);
-    setIsAnnotating(false);
-  };
-
   const handleSendMessage = useCallback(async () => {
     if (!currentMessage.trim() || isLoading || !chatSession) return;
 
     setIsLoading(true);
     setError(null);
 
-    const userMessageParts: ChatMessagePart[] = [];
-    if (annotationImage) {
-      userMessageParts.push({
-        inlineData: {
-          mimeType: 'image/jpeg',
-          data: annotationImage.split(',')[1], // remove data:image/jpeg;base64,
-        }
-      });
-    }
-    userMessageParts.push({ text: currentMessage });
+    const userMessageParts: ChatMessagePart[] = [{ text: currentMessage }];
 
     const userMessage: ChatMessage = {
       role: 'user',
@@ -81,14 +65,10 @@ const App: React.FC = () => {
     setHistory(prev => [...prev, userMessage]);
     
     const messageToSend = {
-      message: userMessageParts.map(p => {
-        if (p.inlineData) return { inlineData: p.inlineData };
-        return { text: p.text };
-      })
+      message: userMessageParts.map(p => ({ text: p.text }))
     };
 
     setCurrentMessage('');
-    setAnnotationImage(null);
 
     try {
       // @ts-ignore - a bug in the library type definition
@@ -118,7 +98,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentMessage, isLoading, chatSession, annotationImage]);
+  }, [currentMessage, isLoading, chatSession]);
 
   return (
     <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
@@ -133,8 +113,6 @@ const App: React.FC = () => {
               setMessage={setCurrentMessage}
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
-              annotationImage={annotationImage}
-              clearAnnotation={() => setAnnotationImage(null)}
             />
           </div>
           <div className="flex-grow w-full md:w-2/3 lg:w-3/4 h-full">
@@ -144,9 +122,6 @@ const App: React.FC = () => {
               error={error}
               viewMode={viewMode}
               setViewMode={setViewMode}
-              isAnnotating={isAnnotating}
-              setIsAnnotating={setIsAnnotating}
-              onAnnotationComplete={handleAnnotationComplete}
             />
           </div>
         </main>

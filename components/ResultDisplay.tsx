@@ -1,6 +1,5 @@
 import React from 'react';
 import { ViewMode } from '../types';
-import AnnotationLayer from './AnnotationLayer';
 
 interface ResultDisplayProps {
   htmlContent: string;
@@ -8,9 +7,6 @@ interface ResultDisplayProps {
   error: string | null;
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
-  isAnnotating: boolean;
-  setIsAnnotating: (isAnnotating: boolean) => void;
-  onAnnotationComplete: (imageDataUrl: string) => void;
 }
 
 const LoadingSkeleton: React.FC = () => (
@@ -39,8 +35,7 @@ const InitialState: React.FC = () => (
 );
 
 
-const ResultDisplay: React.FC<ResultDisplayProps> = ({ htmlContent, isLoading, error, viewMode, setViewMode, isAnnotating, setIsAnnotating, onAnnotationComplete }) => {
-  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+const ResultDisplay: React.FC<ResultDisplayProps> = ({ htmlContent, isLoading, error, viewMode, setViewMode }) => {
 
   const renderContent = () => {
     if (isLoading) {
@@ -60,21 +55,12 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ htmlContent, isLoading, e
     }
     if (viewMode === ViewMode.Preview) {
       return (
-        <>
         <iframe
-          ref={iframeRef}
           srcDoc={htmlContent}
           title="Website Preview"
           className="w-full h-full border-0 bg-white"
           sandbox="allow-scripts allow-same-origin"
         />
-        {isAnnotating && iframeRef.current && (
-          <AnnotationLayer
-            targetElement={iframeRef.current}
-            onComplete={onAnnotationComplete}
-          />
-        )}
-        </>
       );
     }
     if (viewMode === ViewMode.Code) {
@@ -91,32 +77,19 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ htmlContent, isLoading, e
     <div className="flex flex-col h-full bg-slate-900">
       <div className="flex-shrink-0 bg-slate-800 p-2 flex items-center justify-between border-b border-slate-700">
         <div className="flex items-center gap-2">
-            <button 
+            <button
                 onClick={() => setViewMode(ViewMode.Preview)}
-                disabled={!htmlContent || isAnnotating}
+                disabled={!htmlContent}
                 className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === ViewMode.Preview ? 'bg-cyan-600 text-white' : 'bg-transparent text-slate-300 hover:bg-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
                 Preview
             </button>
-            <button 
+            <button
                 onClick={() => setViewMode(ViewMode.Code)}
-                disabled={!htmlContent || isAnnotating}
+                disabled={!htmlContent}
                 className={`px-3 py-1 text-sm rounded-md transition-colors ${viewMode === ViewMode.Code ? 'bg-cyan-600 text-white' : 'bg-transparent text-slate-300 hover:bg-slate-700'} disabled:opacity-50 disabled:cursor-not-allowed`}
             >
                 Code
-            </button>
-        </div>
-        <div>
-            <button
-                onClick={() => setIsAnnotating(!isAnnotating)}
-                disabled={!htmlContent || viewMode !== ViewMode.Preview}
-                 className={`px-3 py-1 text-sm rounded-md transition-colors flex items-center gap-2 ${isAnnotating ? 'bg-rose-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'} disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" />
-                  <path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" />
-                </svg>
-                {isAnnotating ? 'Cancel' : 'Annotate'}
             </button>
         </div>
       </div>
