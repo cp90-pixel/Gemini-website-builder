@@ -71,7 +71,6 @@ const ResultDisplay: React.FC<ResultDisplayProps> = ({ htmlContent, isLoading, e
         {isAnnotating && iframeRef.current && (
           <AnnotationLayer
             targetElement={iframeRef.current}
-            htmlContent={htmlContent}
             onComplete={onAnnotationComplete}
           />
         )}

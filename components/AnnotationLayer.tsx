@@ -2,12 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import html2canvas from 'html2canvas';
 
 interface AnnotationLayerProps {
-  targetElement: HTMLElement;
-  htmlContent: string;
+  targetElement: HTMLIFrameElement;
   onComplete: (imageDataUrl: string) => void;
 }
 
-const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ targetElement, htmlContent, onComplete }) => {
+const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ targetElement, onComplete }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
@@ -92,14 +91,20 @@ const AnnotationLayer: React.FC<AnnotationLayerProps> = ({ targetElement, htmlCo
       setIsCapturing(true);
 
       try {
-        const screenshotCanvas = await html2canvas(targetElement, {
+        if (!targetElement.contentDocument || !targetElement.contentWindow) {
+            throw new Error("Iframe content is not accessible.");
+        }
+        
+        const captureTarget = targetElement.contentDocument.body;
+
+        const screenshotCanvas = await html2canvas(captureTarget, {
             allowTaint: true,
             useCORS: true,
             logging: false,
             width: targetElement.clientWidth,
             height: targetElement.clientHeight,
-            scrollX: -targetElement.scrollLeft,
-            scrollY: -targetElement.scrollTop,
+            scrollX: targetElement.contentWindow.scrollX,
+            scrollY: targetElement.contentWindow.scrollY,
         });
 
         const finalCanvas = document.createElement('canvas');
